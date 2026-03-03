@@ -2,27 +2,28 @@
 #include <stdio.h>
 #include "stack.h"
 
-struct stack* top = NULL;
+struct stack* head = NULL;
+
 void push(int value){
-    struct stack* p;
-    p = top;
-    top = (struct stack*)malloc(sizeof(struct stack));
-    top->value = value;
-    top->next = p; 
+     struct stack* NewStack = (struct stack*)malloc(sizeof(struct stack));
+     NewStack-> value = value;
+     if (head != NULL) NewStack->next = head;
+     else{
+        NewStack->next = NULL;
+     }
+    head = NewStack;
 }
 
-void pop(){  
-   struct stack* p;
-   if (top != NULL){
-   	p = top;
-   	top = top->next;
-   	free(p);
-   }	
+void pop(){
+    if(head == NULL) return;
+	struct stack* temp = head;
+	head = head->next;
+	free(temp);
 }
-void print(){
-	struct stack* t = top;
-	while(t != NULL){
-		printf("%d ", t->value);
-		t=t->next;
+void printall(){
+	struct stack* temp = head;
+	while(temp != NULL){
+		printf("%d\n",temp->value);
+		temp = temp->next;
 	}
 }

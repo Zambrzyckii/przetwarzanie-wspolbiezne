@@ -8,7 +8,5 @@ struct stack{
 
 void push(int value);
 void pop();
-void print();
-
-
-#endif
+void printall();
+#endif 
