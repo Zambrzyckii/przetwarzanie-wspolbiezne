@@ -1,50 +1,66 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include "hashmap.h"
+#include "lab.h"
+#include <pthread.h>
+stack* top = NULL;
+pthread_mutex_t lock;
 
-int my_hash_func(void* key) {
-    char* s = (char*)key;
-    int hash = 0;
-    while (*s) {
-        hash = hash * 31 + *s++;
+void pushsafe(int value) {
+
+    stack* temp = (stack*)malloc(sizeof(stack));
+    temp->value = value;
+    temp->next = top;
+    top = temp;
+
+}
+
+void* thrcreate(void* arg) {
+    int start_val = *((int*)arg);
+    for (int i = start_val; i <= 1000000; i += 2) {
+        pushsafe(i);
+        printf("push: %d\n", i);
     }
-    return abs(hash); 
+    return NULL;
+}
+void display() {
+    stack* temp = top;
+    if (temp == NULL) return;
+
+    while (temp != NULL) {
+        printf("%d ", temp->value);
+        temp = temp->next;
+    }
+
 }
 
-int my_compare_func(void* key1, void* key2) {
-    return strcmp((char*)key1, (char*)key2); 
-}
+void countel() {
+    pthread_mutex_lock(&lock);
+    stack* temp = top;
+    int counter = 0;
+    if (temp == NULL) return;
+    while (temp != NULL) {
+        counter++;
+        temp = temp->next;
+    }
+    printf("\ncount: %d\n", counter);
 
-void my_print_entry(void* key, void* value) {
-    printf("{%s: %d}", (char*)key, *(int*)value);
 }
-
 int main() {
-    int jan = 25;
-    int anna = 30;
-    int marek = 40;
-    int nowy = 35;
+    pthread_t t1,t2;
+    int s1 = 1;
+    int s2 = 0;
 
-    hashmap* hmap = create(5, my_hash_func, my_compare_func);
-    if (!hmap) {
-        return 1;
-    }
+    pthread_mutex_init(&lock,NULL);
 
-    add(hmap, "Jan", &jan);
-    add(hmap, "Anna", &anna);
-    add(hmap, "Marek", &marek);
+    pthread_create(&t1,NULL,thrcreate,&s1);
+    pthread_create(&t2,NULL,thrcreate,&s2);
+
+    pthread_join(t1,NULL);
+    pthread_join(t2,NULL);
 
 
-    add(hmap, "Jan", &nowy);
-
-    printall(hmap, my_print_entry);
-    printf("\n");
-    removeel(hmap, "Anna");
-
-    printall(hmap, my_print_entry);
-
-    destroy(hmap); 
-
+    //display();
+    countel();
     return 0;
+
 }
