@@ -2,28 +2,28 @@
 #include <stdlib.h>
 #include "lab.h"
 #include <pthread.h>
+#include <semaphore.h>
 stack* top = NULL;
-pthread_mutex_t lock;
-
+sem_t semaphore;
 void pushsafe(int value) {
-    pthread_mutex_lock(&lock);
+    sem_wait(&semaphore);
     stack* temp = (stack*)malloc(sizeof(stack));
     temp->value = value;
     temp->next = top;
     top = temp;
-    pthread_mutex_unlock(&lock);
+    sem_post(&semaphore);
 }
 
 void* thrcreate(void* arg) {
     int start_val = *((int*)arg);
-    for (int i = start_val; i <= 1000000; i += 2) {
+    for (int i = start_val; i <= 100; i += 2) {
         pushsafe(i);
         printf("push: %d\n", i);
     }
     return NULL;
 }
 void display() {
-    pthread_mutex_lock(&lock);
+    sem_wait(&semaphore);
     stack* temp = top;
     if (temp == NULL) return;
 
@@ -31,11 +31,12 @@ void display() {
         printf("%d ", temp->value);
         temp = temp->next;
     }
-    pthread_mutex_unlock(&lock);
+   sem_post(&semaphore);
 }
 
+
 void countel() {
-    pthread_mutex_lock(&lock);
+    sem_wait(&semaphore);
     stack* temp = top;
     int counter = 0;
     if (temp == NULL) return;
@@ -44,16 +45,14 @@ void countel() {
         temp = temp->next;
     }
     printf("\ncount: %d\n", counter);
-
-    pthread_mutex_unlock(&lock);
+    sem_post(&semaphore);
 }
 int main() {
     pthread_t t1,t2;
     int s1 = 1;
     int s2 = 0;
 
-    pthread_mutex_init(&lock,NULL);
-
+    sem_init(&semaphore, 0, 1);
     pthread_create(&t1,NULL,thrcreate,&s1);
     pthread_create(&t2,NULL,thrcreate,&s2);
 
@@ -63,6 +62,7 @@ int main() {
 
     //display();
     countel();
+    sem_destroy(&semaphore);
     return 0;
 
 }
