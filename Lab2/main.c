@@ -4,21 +4,28 @@
 #include <pthread.h>
 stack* top = NULL;
 pthread_mutex_t lock;
-
+pthread_cond_t cond;
+int currentexp = 0;
 void pushsafe(int value) {
-    pthread_mutex_lock(&lock);
+   // pthread_mutex_lock(&lock);
     stack* temp = (stack*)malloc(sizeof(stack));
     temp->value = value;
     temp->next = top;
     top = temp;
-    pthread_mutex_unlock(&lock);
+   // pthread_mutex_unlock(&lock);
 }
 
 void* thrcreate(void* arg) {
     int start_val = *((int*)arg);
-    for (int i = start_val; i <= 1000000; i += 2) {
+    const char* tag = start_val ? "ODD" : "EVEN";
+    for (int i = start_val; i <= 10000; i += 2) {
+        pthread_mutex_lock(&lock);
+        while(currentexp != i) pthread_cond_wait(&cond,&lock);
         pushsafe(i);
-        printf("push: %d\n", i);
+        printf("%s: %d\n",tag, i);
+        currentexp++;
+        pthread_cond_broadcast(&cond);
+        pthread_mutex_unlock(&lock);
     }
     return NULL;
 }
@@ -53,6 +60,7 @@ int main() {
     int s2 = 0;
 
     pthread_mutex_init(&lock,NULL);
+    pthread_cond_init(&cond,NULL);
 
     pthread_create(&t1,NULL,thrcreate,&s1);
     pthread_create(&t2,NULL,thrcreate,&s2);
@@ -63,6 +71,8 @@ int main() {
 
     //display();
     countel();
+    pthread_mutex_destroy(&lock);
+    pthread_cond_destroy(&cond);
     return 0;
 
 }
